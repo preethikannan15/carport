@@ -8,7 +8,10 @@ pipeline {
         }
         stage('Extract Files') {
             steps {
-                sh 'unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/'
+                sh '''
+                sudo mkdir -p /var/www/html/
+                sudo unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/
+                '''
             }
         }
         stage('Setup Database') {
