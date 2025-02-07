@@ -21,21 +21,27 @@ pipeline {
                 }
             }
         }
-
-         stage('Setup Database') {
-              steps {
-              script {
+ stage('Setup Database') {
+    steps {
+        script {
             sh '''
             set -e
+            export DEBIAN_FRONTEND=noninteractive
+            sudo apt-get update
             sudo apt-get install -y mysql-server mysql-client
+            
+            # Start and enable MySQL
             sudo systemctl start mysql
             sudo systemctl enable mysql
+
+            # Create database and import data
             mysql -u root -pubuntu -h 127.0.0.1 -e "CREATE DATABASE IF NOT EXISTS carrental;"
             mysql -u root -pubuntu -h 127.0.0.1 carrental < "/var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/SQL File/carrental.sql"
             '''
         }
     }
 }
+
 
         stage('Configure Apache') {
             steps {
