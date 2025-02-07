@@ -28,9 +28,14 @@ stage('Setup Database') {
             set -e
             export DEBIAN_FRONTEND=noninteractive
             
-            # Update and install MySQL
+            # Fix any broken dpkg configuration
+            sudo dpkg --configure -a
+            
+            # Update package list
             sudo apt-get update
-            sudo apt-get install -y mysql-server mysql-client || sudo apt-get -f install -y
+            
+            # Install necessary packages
+            sudo apt-get install -y unzip mysql-server mysql-client || sudo apt-get -f install -y
             
             # Ensure MySQL is running
             sudo systemctl restart mysql
@@ -45,7 +50,6 @@ stage('Setup Database') {
         }
     }
 }
-
 
         stage('Configure Apache') {
             steps {
