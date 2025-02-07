@@ -21,31 +21,24 @@ pipeline {
                 }
             }
         }
-stage('Setup Database') {
+stage('Extract Files') {
     steps {
         script {
             sh '''
             set -e
             export DEBIAN_FRONTEND=noninteractive
             
-            # Fix any broken dpkg configuration
-            sudo dpkg --configure -a
-            
+            # Fix dpkg issues if needed
+            sudo dpkg --configure -a || echo "No dpkg issues found."
+
             # Update package list
             sudo apt-get update
-            
-            # Install necessary packages
-            sudo apt-get install -y unzip mysql-server mysql-client || sudo apt-get -f install -y
-            
-            # Ensure MySQL is running
-            sudo systemctl restart mysql
-            sudo systemctl enable mysql
 
-            # Create database
-            sudo mysql -u root -e "CREATE DATABASE IF NOT EXISTS carrental;"
-            
-            # Import SQL file
-            sudo mysql -u root carrental < "/var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/SQL File/carrental.sql"
+            # Install required packages
+            sudo apt-get install -y unzip || sudo apt-get -f install -y
+
+            # Extract the zip file
+            unzip -o Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/
             '''
         }
     }
