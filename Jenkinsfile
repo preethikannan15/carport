@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/your-repo-url.git'  // Replace with your actual repo
+                git 'https://github.com/preethikannan15/carport.git'  // Replace with your actual repo
             }
         }
 
