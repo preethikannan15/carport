@@ -21,28 +21,19 @@ pipeline {
                 }
             }
         }
-stage('Extract Files') {
-    steps {
-        script {
-            sh '''
-            set -e
-            export DEBIAN_FRONTEND=noninteractive
-            
-            # Fix dpkg issues if needed
-            sudo dpkg --configure -a || echo "No dpkg issues found."
 
-            # Update package list
-            sudo apt-get update
-
-            # Install required packages
-            sudo apt-get install -y unzip || sudo apt-get -f install -y
-
-            # Extract the zip file
-            unzip -o Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/
-            '''
+        stage('Setup Database') {
+            steps {
+                script {
+                    sh '''
+                    set -e
+                    sudo apt-get install -y mysql-client
+                    mysql -u root -pubuntu -e "CREATE DATABASE IF NOT EXISTS carrental;"
+                    mysql -u root -pubuntu carrental < "/var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/SQL File/carrental.sql"
+                    '''
+                }
+            }
         }
-    }
-}
 
         stage('Configure Apache') {
             steps {
@@ -68,4 +59,3 @@ stage('Extract Files') {
         }
     }
 }
-  
