@@ -13,6 +13,7 @@ pipeline {
                 script {
                     sh '''
                     set -e
+                    sudo dpkg --configure -a || echo "No broken dpkg issues"
                     sudo apt-get update
                     sudo apt-get install -y unzip
                     sudo mkdir -p /var/www/html/
@@ -52,10 +53,10 @@ pipeline {
     
     post {
         success {
-            echo "Deployment completed successfully!"
+            echo "✅ Deployment completed successfully!"
         }
         failure {
-            echo "Deployment failed!"
+            echo "❌ Deployment failed!"
         }
     }
 }
