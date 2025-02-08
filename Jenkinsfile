@@ -4,58 +4,36 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', credentialsId: 'your-github-credentials', url: 'https://github.com/preethikannan15/carport.git'
+                git 'https://github.com/preethikannan15/carport.git'
             }
         }
 
         stage('Extract Files') {
             steps {
-                script {
-                    sh '''
-                    set -e
-                    sudo apt-get update
-                    sudo apt-get install -y unzip
-                    sudo mkdir -p /var/www/html/
-                    sudo unzip -o Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/
-                    '''
-                }
+                sh '''
+                sudo apt update && sudo apt install unzip -y || sudo yum install unzip -y
+                sudo mkdir -p /var/www/html/
+                sudo unzip -o Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/
+                '''
             }
         }
 
         stage('Setup Database') {
             steps {
-                script {
-                    sh '''
-                    set -e
-                    sudo apt-get install -y mysql-client
-                    mysql -u root -pubuntu -e "CREATE DATABASE IF NOT EXISTS carrental;"
-                    mysql -u root -pubuntu carrental < "/var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/SQL File/carrental.sql"
-                    '''
-                }
+                sh '''
+                sudo apt install mysql-client -y || sudo yum install mysql -y
+                mysql -u root -pubuntu -e "CREATE DATABASE IF NOT EXISTS carrental;"
+                mysql -u root -pubuntu carrental < /var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/SQL\ File/carrental.sql
+                '''
             }
         }
 
         stage('Configure Apache') {
             steps {
-                script {
-                    sh '''
-                    set -e
-                    sudo apt-get install -y apache2
-                    sudo chown -R www-data:www-data /var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0
-                    sudo chmod -R 755 /var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0
-                    sudo systemctl restart apache2
-                    '''
-                }
+                sh '''
+                sudo systemctl restart apache2 || sudo systemctl restart httpd
+                '''
             }
-        }
-    }
-    
-    post {
-        success {
-            echo "Deployment completed successfully!"
-        }
-        failure {
-            echo "Deployment failed!"
         }
     }
 }
