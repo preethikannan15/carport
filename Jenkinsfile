@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', credentialsId: 'b4e6f69a-632f-4e60-b4c1-1754bd6fdef7', url: 'https://github.com/preethikannan15/carport.git'
+                git branch: 'main', credentialsId: 'your-github-credentials', url: 'https://github.com/preethikannan15/carport.git'
             }
         }
 
@@ -27,9 +27,13 @@ pipeline {
                 script {
                     sh '''
                     set -e
-                    echo "jenkins" | sudo -S apt-get install -y mysql-client
-                    mysql -u root -pubuntu -e "CREATE DATABASE IF NOT EXISTS carrental;"
-                    mysql -u root -pubuntu carrental < "/var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/SQL File/carrental.sql"
+                    echo "jenkins" | sudo -S apt-get install -y mysql-server mysql-client
+                    echo "jenkins" | sudo -S systemctl start mysql
+                    echo "jenkins" | sudo -S systemctl enable mysql
+                    sleep 10  # Wait for MySQL to start
+
+                    mysql -u root -e "CREATE DATABASE IF NOT EXISTS carrental;"
+                    mysql -u root carrental < "/var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/SQL File/carrental.sql"
                     '''
                 }
             }
