@@ -9,7 +9,7 @@ pipeline {
         stage('Extract Files') {
             steps {
                 sh '''
-                sudo apt update && sudo apt install unzip -y || sudo yum install unzip -y
+                sudo apt update && sudo apt install unzip mysql-client -y || sudo yum install unzip mysql -y
                 sudo mkdir -p /var/www/html/
                 sudo unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/
                 '''
@@ -19,7 +19,7 @@ pipeline {
             steps {
                 sh '''
                 mysql -u root -p'ubuntu' -e "CREATE DATABASE IF NOT EXISTS carrental;"
-                mysql -u root -p'ubuntu' carrental < /var/www/html/carrental.sql
+                mysql -u root -p'ubuntu' carrental < /var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/SQL\ File/carrental.sql
                 '''
             }
         }
@@ -34,3 +34,4 @@ pipeline {
         }
     }
 }
+
