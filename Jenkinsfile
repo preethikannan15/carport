@@ -9,6 +9,7 @@ pipeline {
         stage('Extract Files') {
             steps {
                 sh '''
+                sudo apt update && sudo apt install unzip -y || sudo yum install unzip -y
                 sudo mkdir -p /var/www/html/
                 sudo unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/
                 '''
