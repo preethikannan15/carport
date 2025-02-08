@@ -22,18 +22,20 @@ pipeline {
             }
         }
 
-        stage('Setup Database') {
-            steps {
-                script {
-                    sh '''
-                    set -e
-                    sudo apt-get install -y mysql-client
-                    mysql -u root -pubuntu -e "CREATE DATABASE IF NOT EXISTS carrental;"
-                    mysql -u root -pubuntu carrental < "/var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/SQL File/carrental.sql"
-                    '''
-                }
-            }
+       stage('Setup Database') {
+    steps {
+        script {
+            sh '''
+            set -e
+            sudo apt-get install -y mysql-server mysql-client
+            sudo systemctl start mysql
+            sudo systemctl enable mysql
+            mysql -u root -pubuntu -h 127.0.0.1 -e "CREATE DATABASE IF NOT EXISTS carrental;"
+            mysql -u root -pubuntu -h 127.0.0.1 carrental < "/var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/SQL File/carrental.sql"
+            '''
         }
+    }
+}
 
         stage('Configure Apache') {
             steps {
