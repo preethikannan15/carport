@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', credentialsId: 'your-github-credentials', url: 'https://github.com/preethikannan15/carport.git'
+                git branch: 'main', credentialsId: '37bf8158-4ffd-4a9a-ab0f-492cdc04812f', url: 'https://github.com/preethikannan15/carport.git'
             }
         }
 
