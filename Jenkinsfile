@@ -1,6 +1,14 @@
 pipeline {
     agent any
 
+    environment {
+        DB_NAME = "carrental"
+        DB_USER = "root"
+        DB_PASSWORD = "ubuntu"
+        WEB_DIR = "/var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0"
+        SQL_FILE = "/var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/SQL File/carrental.sql"
+    }
+
     stages {
         stage('Checkout Code') {
             steps {
@@ -22,34 +30,35 @@ pipeline {
             }
         }
 
-       stage('Setup Database') {
-    steps {
-        script {
-            sh '''
-            set -e
-            export DEBIAN_FRONTEND=noninteractive
-            sudo apt-get update
-            sudo apt-get install -y mysql-server mysql-client
-            
-            # Start and enable MySQL
-            sudo systemctl start mysql
-            sudo systemctl enable mysql
+        stage('Setup Database') {
+            steps {
+                script {
+                    sh '''
+                    set -e
+                    export DEBIAN_FRONTEND=noninteractive
+                    sudo apt-get update
+                    sudo apt-get install -y mysql-server mysql-client
+                    
+                    # Start and enable MySQL
+                    sudo systemctl start mysql
+                    sudo systemctl enable mysql
 
-            # Create database and import data
-            mysql -u root -pubuntu -h 127.0.0.1 -e "CREATE DATABASE IF NOT EXISTS carrental;"
-            mysql -u root -pubuntu -h 127.0.0.1 carrental < "/var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/SQL File/carrental.sql"
-            '''
+                    # Create database and import data
+                    echo "CREATE DATABASE IF NOT EXISTS ${DB_NAME};" | mysql -u ${DB_USER} -p${DB_PASSWORD} -h 127.0.0.1
+                    mysql -u ${DB_USER} -p${DB_PASSWORD} -h 127.0.0.1 ${DB_NAME} < "${SQL_FILE}"
+                    '''
+                }
+            }
         }
-    }
-}
+
         stage('Configure Apache') {
             steps {
                 script {
                     sh '''
                     set -e
-                    sudo apt-get install -y apache2
-                    sudo chown -R www-data:www-data /var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0
-                    sudo chmod -R 755 /var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0
+                    sudo apt-get install -y apache2 php libapache2-mod-php php-mysql
+                    sudo chown -R www-data:www-data ${WEB_DIR}
+                    sudo chmod -R 755 ${WEB_DIR}
                     sudo systemctl restart apache2
                     '''
                 }
@@ -59,10 +68,10 @@ pipeline {
     
     post {
         success {
-            echo "Deployment completed successfully!"
+            echo "🚀 Deployment completed successfully!"
         }
         failure {
-            echo "Deployment failed!"
+            echo "❌ Deployment failed!"
         }
     }
 }
