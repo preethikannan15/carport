@@ -8,19 +8,25 @@ pipeline {
             }
         }
 
-        stage('Extract Files') {
-            steps {
-                script {
-                    sh '''
-                    set -e
-                    echo "jenkins" | sudo -S apt-get update
-                    echo "jenkins" | sudo -S apt-get install -y unzip
-                    sudo mkdir -p /var/www/html/
-                    sudo unzip -o Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/
-                    '''
-                }
-            }
+      stage('Extract Files') {
+    steps {
+        script {
+            sh '''
+            set -e
+            echo "jenkins" | sudo -S apt-get update
+            
+            # Fix interrupted dpkg issue automatically
+            sudo dpkg --configure -a || true
+            
+            echo "jenkins" | sudo -S apt-get install -y unzip
+            
+            # Ensure directory exists and extract files
+            sudo mkdir -p /var/www/html/
+            sudo unzip -o Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/
+            '''
         }
+    }
+}
 
         stage('Setup Database') {
             steps {
