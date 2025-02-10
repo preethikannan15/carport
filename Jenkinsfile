@@ -75,8 +75,11 @@ pipeline {
 
     post {
         success {
-            echo "✅ Deployment completed successfully!"
-            echo "🌐 Access your portal at: http://$(curl -s ifconfig.me)"
+            script {
+                def ip = sh(script: "curl -s ifconfig.me", returnStdout: true).trim()
+                echo "✅ Deployment completed successfully!"
+                echo "🌐 Access your portal at: http://${ip}"
+            }
         }
         failure {
             echo "❌ Deployment failed!"
