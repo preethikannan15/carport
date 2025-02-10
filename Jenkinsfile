@@ -7,7 +7,9 @@ pipeline {
                 script {
                     sh '''
                     echo "Installing Dependencies..."
+                    sudo dpkg --configure -a || true  # Fix interrupted installation
                     sudo apt-get update
+                    sudo apt-get install -y --fix-broken  # Fix broken dependencies
                     sudo apt-get install -y apache2 mysql-server php php-mysql unzip
                     sudo systemctl enable apache2 mysql
                     sudo systemctl start apache2 mysql
