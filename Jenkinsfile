@@ -1,14 +1,10 @@
 pipeline {
     agent any
 
-    environment {
-        DEBIAN_FRONTEND = "noninteractive"  // Prevents interactive debconf issues
-    }
-
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', credentialsId: '94cf9629-e7de-4dc1-9be6-8f3c17b759ab', url: 'https://github.com/preethikannan15/carport.git'
+                git branch: 'main', credentialsId: '9e1e0fb1-cf03-45ff-b9f8-225ab7f3feab', url: 'https://github.com/preethikannan15/carport.git'
             }
         }
 
@@ -18,14 +14,7 @@ pipeline {
                     sh '''
                     set -e
                     echo "jenkins" | sudo -S apt-get update
-                    
-                    # Fix dpkg errors before installation
-                    sudo dpkg --configure -a || true
-                    sudo apt-get install -f || true
-                    
                     echo "jenkins" | sudo -S apt-get install -y unzip
-                    
-                    # Ensure directory exists and extract files
                     sudo mkdir -p /var/www/html/
                     sudo unzip -o Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/
                     '''
@@ -33,52 +22,51 @@ pipeline {
             }
         }
 
-        stage('Setup Database') {
+        stage('Install MySQL & Import Database') {
             steps {
                 script {
                     sh '''
                     set -e
                     echo "jenkins" | sudo -S apt-get install -y mysql-server mysql-client
-                    
-                    # Restart MySQL properly
-                    echo "jenkins" | sudo -S systemctl restart mysql
+                    echo "jenkins" | sudo -S systemctl start mysql
                     echo "jenkins" | sudo -S systemctl enable mysql
-                    sleep 10  # Wait for MySQL to start
+                    sleep 10  # Wait for MySQL to fully start
 
-                    # Create and import database
-                    echo "Creating Database..."
+                    # Secure MySQL installation (disable root password prompt)
+                    sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '';"
+                    sudo mysql -e "FLUSH PRIVILEGES;"
+
+                    # Create database and import SQL file
                     mysql -u root -e "CREATE DATABASE IF NOT EXISTS carrental;"
-
-                    echo "Importing SQL File..."
                     mysql -u root carrental < "/var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/SQL File/carrental.sql"
-
-                    echo "Database Setup Complete!"
                     '''
                 }
             }
         }
 
-        stage('Configure Apache') {
+        stage('Install Apache & Configure Permissions') {
             steps {
                 script {
                     sh '''
                     set -e
-                    echo "jenkins" | sudo -S apt-get install -y apache2
+                    echo "jenkins" | sudo -S apt-get install -y apache2 php libapache2-mod-php php-mysql
                     sudo chown -R www-data:www-data /var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0
                     sudo chmod -R 755 /var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0
                     sudo systemctl restart apache2
+                    sudo systemctl enable apache2
                     '''
                 }
             }
         }
     }
-
+    
     post {
         success {
+            echo "✅ Deployment completed successfully!"
             script {
-                def ip = sh(script: "curl -s ifconfig.me", returnStdout: true).trim()
-                echo "✅ Deployment completed successfully!"
-                echo "🌐 Access your portal at: http://${ip}"
+                sh '''
+                echo "🌐 Access your portal at: http://$(curl -s ifconfig.me)"
+                '''
             }
         }
         failure {
