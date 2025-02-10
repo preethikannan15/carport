@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', credentialsId: '9e1e0fb1-cf03-45ff-b9f8-225ab7f3feab', url: 'https://github.com/preethikannan15/carport.git'
+                git branch: 'main', credentialsId: 'a008eebd-aa08-4387-808f-66c4cd2d2b1c', url: 'https://github.com/preethikannan15/carport.git'
             }
         }
 
@@ -27,12 +27,14 @@ pipeline {
                 script {
                     sh '''
                     set -e
-                    echo "jenkins" | sudo -S apt-get install -y mysql-server mysql-client
+                    echo "jenkins" | sudo -S apt-get update
+                    echo "jenkins" | sudo -S DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server mysql-client
+                    echo "jenkins" | sudo -S dpkg --configure -a  # Ensure package config completes
                     echo "jenkins" | sudo -S systemctl start mysql
                     echo "jenkins" | sudo -S systemctl enable mysql
-                    sleep 10  # Wait for MySQL to fully start
+                    sleep 10  # Give MySQL time to start
 
-                    # Secure MySQL installation (disable root password prompt)
+                    # Secure MySQL installation
                     sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '';"
                     sudo mysql -e "FLUSH PRIVILEGES;"
 
