@@ -1,10 +1,14 @@
 pipeline {
     agent any
 
+    environment {
+        DEBIAN_FRONTEND = "noninteractive"  // Prevents interactive debconf issues
+    }
+
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', credentialsId: '94cf9629-e7de-4dc1-9be6-8f3c17b759ab', url: 'https://github.com/preethikannan15/carport.git'
+                git branch: 'main', credentialsId: 'a008eebd-aa08-4387-808f-66c4cd2d2b1c', url: 'https://github.com/preethikannan15/carport.git'
             }
         }
 
@@ -15,7 +19,7 @@ pipeline {
                     set -e
                     echo "jenkins" | sudo -S apt-get update
                     
-                    # Fix any interrupted dpkg process before installation
+                    # Fix dpkg errors before installation
                     sudo dpkg --configure -a || true
                     sudo apt-get install -f || true
                     
@@ -35,8 +39,8 @@ pipeline {
                     sh '''
                     set -e
                     echo "jenkins" | sudo -S apt-get install -y mysql-server mysql-client
-                    
-                    # Ensure MySQL is running
+
+                    # Ensure MySQL is running before proceeding
                     echo "jenkins" | sudo -S systemctl start mysql || sudo systemctl restart mysql
                     echo "jenkins" | sudo -S systemctl enable mysql
                     sleep 10  # Give MySQL time to start
@@ -63,7 +67,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         success {
             echo "✅ Deployment completed successfully!"
