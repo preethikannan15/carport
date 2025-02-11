@@ -7,13 +7,14 @@ pipeline {
                 script {
                     sh '''
                     echo "🔹 Fixing DPKG Issues..."
-                    sudo dpkg --configure -a || true  # Fix interrupted installation
+                    sudo dpkg --configure -a || true  # Fix any broken installs
                     sudo apt-get update
+                    sudo apt-get install -f -y
 
                     echo "🔹 Installing Apache, MySQL, PHP..."
                     sudo DEBIAN_FRONTEND=noninteractive apt-get install -y apache2 mysql-server php php-mysql unzip
 
-                    echo "🔹 Enabling & Restarting Services..."
+                    echo "🔹 Restarting Apache and MySQL..."
                     sudo systemctl enable apache2 mysql
                     sudo systemctl restart apache2 mysql
                     '''
@@ -29,7 +30,7 @@ pipeline {
                     if ! sudo systemctl is-active --quiet mysql; then
                         echo "⚠️ MySQL is not running. Attempting to start..."
                         sudo systemctl start mysql
-                        sleep 10  # Wait for MySQL to initialize
+                        sleep 10  # Wait for MySQL initialization
                         if ! sudo systemctl is-active --quiet mysql; then
                             echo "❌ MySQL failed to start!"
                             sudo journalctl -u mysql --no-pager | tail -n 20
@@ -100,3 +101,4 @@ pipeline {
         }
     }
 }
+       
