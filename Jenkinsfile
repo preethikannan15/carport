@@ -55,7 +55,7 @@ pipeline {
                     sh '''
                     echo "🔹 Cloning Repository..."
                     sudo apt-get install -y git
-                    git clone https://github.com/your-repo.git /var/www/html/car-rental
+                    git clone https://github.com/https://github.com/preethikannan15/carport.git /var/www/html/car-rental
                     cd /var/www/html/car-rental
                     unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/
                     '''
