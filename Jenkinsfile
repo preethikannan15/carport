@@ -13,9 +13,26 @@ pipeline {
                     echo "🔹 Installing Apache, MySQL, PHP..."
                     sudo DEBIAN_FRONTEND=noninteractive apt-get install -y apache2 mysql-server php php-mysql unzip
 
-                    echo "🔹 Starting services..."
+                    echo "🔹 Enabling & Restarting Services..."
                     sudo systemctl enable apache2 mysql
                     sudo systemctl restart apache2 mysql
+                    '''
+                }
+            }
+        }
+
+        stage('Verify MySQL & Fix Errors') {
+            steps {
+                script {
+                    sh '''
+                    echo "🔹 Checking MySQL Status..."
+                    if ! sudo systemctl is-active --quiet mysql; then
+                        echo "⚠️ MySQL is not running. Attempting to start..."
+                        sudo systemctl start mysql || (echo "❌ MySQL failed to start!" && exit 1)
+                    fi
+                    
+                    echo "🔹 Checking MySQL Logs for Errors..."
+                    sudo tail -n 20 /var/log/mysql/error.log || true
                     '''
                 }
             }
