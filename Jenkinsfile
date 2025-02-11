@@ -7,13 +7,13 @@ pipeline {
         script {
             sh '''
             echo "🔹 Fixing DPKG Issues..."
-            sudo dpkg --configure -a || true  # Fix any broken installs
+            sudo dpkg --configure -a || true  
             sudo apt-get update
             sudo apt-get install -f -y
 
-            echo "🔹 Installing Apache, MySQL, PHP..."
+            echo "🔹 Installing Apache, MySQL, PHP (Optimized)..."
             export DEBIAN_FRONTEND=noninteractive
-            sudo -E apt-get install -y apache2 mysql-server php php-mysql unzip
+            sudo apt-get install -yq apache2 mysql-server php php-mysql unzip --no-install-recommends
 
             echo "🔹 Restarting Apache and MySQL..."
             sudo systemctl enable apache2 mysql
@@ -22,7 +22,6 @@ pipeline {
         }
     }
 }
-
         stage('Verify MySQL & Restart if Needed') {
             steps {
                 script {
