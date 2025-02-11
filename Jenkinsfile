@@ -2,53 +2,48 @@ pipeline {
     agent any
 
     stages {
-       stage('Fix DPKG & Install MySQL') {
-    steps {
-        script {
-            sh '''
-            echo "🔹 Fixing DPKG Issues..."
-            sudo dpkg --configure -a || true  
-            sudo apt-get update
-            sudo apt-get install -f -y
-
-            echo "🔹 Setting Non-Interactive Mode..."
-            export DEBIAN_FRONTEND=noninteractive
-
-            echo "🔹 Installing MySQL Server..."
-            sudo apt-get install -yq mysql-server --no-install-recommends || (echo "❌ MySQL Installation Failed!" && exit 1)
-
-            echo "🔹 Ensuring MySQL Starts..."
-            sudo systemctl enable mysql
-            sudo systemctl restart mysql
-            sleep 5
-
-            echo "🔹 Checking MySQL Status..."
-            if ! sudo systemctl is-active --quiet mysql; then
-                echo "❌ MySQL is NOT running! Check logs: sudo journalctl -u mysql --no-pager"
-                exit 1
-            fi
-
-            echo "✅ MySQL is Running Successfully!"
-            '''
-        }
-    }
-}
-        stage('Verify MySQL & Restart if Needed') {
+        stage('Fix DPKG & Install Dependencies') {
             steps {
                 script {
                     sh '''
+                    echo "🔹 Fixing DPKG Issues..."
+                    sudo dpkg --configure -a || true
+                    sudo apt-get update
+                    sudo apt-get install -f -y
+                    '''
+                }
+            }
+        }
+
+        stage('Install & Start MySQL') {
+            steps {
+                script {
+                    sh '''
+                    echo "🔹 Setting Non-Interactive Mode..."
+                    sudo echo 'mysql-server mysql-server/root_password password root' | sudo debconf-set-selections
+                    sudo echo 'mysql-server mysql-server/root_password_again password root' | sudo debconf-set-selections
+
+                    echo "🔹 Installing MySQL Server..."
+                    sudo apt-get install -yq mysql-server --no-install-recommends || (echo "❌ MySQL Installation Failed!" && exit 1)
+
+                    echo "🔹 Checking MySQL Configuration..."
+                    if [ ! -f /etc/mysql/mysql.conf.d/mysqld.cnf ]; then
+                        echo "⚠️ MySQL configuration file missing!"
+                        exit 1
+                    fi
+
+                    echo "🔹 Ensuring MySQL Starts..."
+                    sudo systemctl enable mysql
+                    sudo systemctl restart mysql
+                    sleep 5
+
                     echo "🔹 Checking MySQL Status..."
                     if ! sudo systemctl is-active --quiet mysql; then
-                        echo "⚠️ MySQL is not running. Attempting to start..."
-                        sudo systemctl start mysql
-                        sleep 10  # Wait for MySQL initialization
-                        if ! sudo systemctl is-active --quiet mysql; then
-                            echo "❌ MySQL failed to start!"
-                            sudo journalctl -u mysql --no-pager | tail -n 20
-                            exit 1
-                        fi
+                        echo "❌ MySQL is NOT running! Check logs: sudo journalctl -u mysql --no-pager"
+                        exit 1
                     fi
-                    echo "✅ MySQL is running."
+
+                    echo "✅ MySQL is Running Successfully!"
                     '''
                 }
             }
@@ -58,12 +53,11 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Cloning repository and extracting files..."
-                    sudo rm -rf /var/www/html/*
-                    git clone https://github.com/preethikannan15/carport.git /tmp/carport
-                    unzip /tmp/carport/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/
-                    sudo chown -R www-data:www-data /var/www/html/
-                    sudo chmod -R 755 /var/www/html/
+                    echo "🔹 Cloning Repository..."
+                    sudo apt-get install -y git
+                    git clone https://github.com/your-repo.git /var/www/html/car-rental
+                    cd /var/www/html/car-rental
+                    unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/
                     '''
                 }
             }
@@ -73,10 +67,10 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Creating MySQL Database & Importing Data..."
-                    sudo mysql -e "DROP DATABASE IF EXISTS carrental; CREATE DATABASE carrental;"
-                    sudo mysql carrental < /var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/carrental.sql
-                    echo "✅ Database imported successfully!"
+                    echo "🔹 Setting Up MySQL Database..."
+                    sudo mysql -u root -proot -e "CREATE DATABASE IF NOT EXISTS carrental;"
+                    sudo mysql -u root -proot carrental < /var/www/html/car-rental/carrental.sql
+                    echo "✅ Database Imported Successfully!"
                     '''
                 }
             }
@@ -86,9 +80,12 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Restarting services and setting permissions..."
-                    sudo systemctl restart apache2 mysql
-                    sudo chmod -R 777 /var/www/html/
+                    echo "🔹 Restarting Apache & MySQL..."
+                    sudo systemctl restart apache2
+                    sudo systemctl restart mysql
+                    sudo chown -R www-data:www-data /var/www/html/
+                    sudo chmod -R 755 /var/www/html/
+                    echo "✅ Services Restarted Successfully!"
                     '''
                 }
             }
@@ -97,10 +94,7 @@ pipeline {
         stage('Deployment Complete') {
             steps {
                 script {
-                    echo "✅ Deployment Successful!"
-                    sh '''
-                    echo "🌐 Access your portal at: http://$(hostname -I | awk '{print $1}')"
-                    '''
+                    echo "🚀 Deployment Successful! Visit http://your-server-ip to access the Car Rental Portal."
                 }
             }
         }
@@ -108,8 +102,12 @@ pipeline {
 
     post {
         failure {
-            echo "❌ Deployment Failed! Check MySQL logs: sudo journalctl -u mysql --no-pager"
+            script {
+                sh '''
+                echo "❌ Deployment Failed! Checking Logs..."
+                sudo journalctl -u mysql --no-pager
+                '''
+            }
         }
     }
 }
-       
