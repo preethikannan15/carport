@@ -3,24 +3,25 @@ pipeline {
 
     stages {
         stage('Fix DPKG & Install Dependencies') {
-            steps {
-                script {
-                    sh '''
-                    echo "🔹 Fixing DPKG Issues..."
-                    sudo dpkg --configure -a || true  # Fix any broken installs
-                    sudo apt-get update
-                    sudo apt-get install -f -y
+    steps {
+        script {
+            sh '''
+            echo "🔹 Fixing DPKG Issues..."
+            sudo dpkg --configure -a || true  # Fix any broken installs
+            sudo apt-get update
+            sudo apt-get install -f -y
 
-                    echo "🔹 Installing Apache, MySQL, PHP..."
-                    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y apache2 mysql-server php php-mysql unzip
+            echo "🔹 Installing Apache, MySQL, PHP..."
+            export DEBIAN_FRONTEND=noninteractive
+            sudo -E apt-get install -y apache2 mysql-server php php-mysql unzip
 
-                    echo "🔹 Restarting Apache and MySQL..."
-                    sudo systemctl enable apache2 mysql
-                    sudo systemctl restart apache2 mysql
-                    '''
-                }
-            }
+            echo "🔹 Restarting Apache and MySQL..."
+            sudo systemctl enable apache2 mysql
+            sudo systemctl restart apache2 mysql
+            '''
         }
+    }
+}
 
         stage('Verify MySQL & Restart if Needed') {
             steps {
