@@ -2,11 +2,11 @@ pipeline {
     agent any
 
     stages {
-        stage('Install Dependencies') {
+        stage('Fix DPKG & Install Dependencies') {
             steps {
                 script {
                     sh '''
-                    echo "Installing Dependencies..."
+                    echo "🔹 Fixing DPKG Issues..."
                     sudo dpkg --configure -a || true  # Fix interrupted installation
                     sudo apt-get update
                     sudo apt-get install -y --fix-broken  # Fix broken dependencies
@@ -22,7 +22,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "Cloning repository and extracting files..."
+                    echo "🔹 Cloning repository and extracting files..."
                     rm -rf /var/www/html/*
                     git clone https://github.com/preethikannan15/carport.git /tmp/carport
                     unzip /tmp/carport/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/
@@ -37,20 +37,20 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "Setting up MySQL Database..."
+                    echo "🔹 Setting up MySQL Database..."
                     sudo mysql -e "DROP DATABASE IF EXISTS carrental; CREATE DATABASE carrental;"
                     sudo mysql carrental < /var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/carrental.sql
-                    echo "Database imported successfully!"
+                    echo "✅ Database imported successfully!"
                     '''
                 }
             }
         }
 
-        stage('Restart Services & Configure Permissions') {
+        stage('Restart Services & Set Permissions') {
             steps {
                 script {
                     sh '''
-                    echo "Restarting services and configuring permissions..."
+                    echo "🔹 Restarting services and configuring permissions..."
                     sudo systemctl restart apache2 mysql
                     sudo chmod -R 777 /var/www/html/
                     '''
