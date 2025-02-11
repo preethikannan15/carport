@@ -11,13 +11,19 @@ pipeline {
             sudo apt-get update
             sudo apt-get install -f -y
 
-            echo "🔹 Installing Apache, MySQL, PHP (Optimized)..."
+            echo "🔹 Preconfiguring MySQL Installation..."
             export DEBIAN_FRONTEND=noninteractive
-            sudo apt-get install -yq apache2 mysql-server php php-mysql unzip --no-install-recommends
+            sudo apt-get install -yq mysql-server --no-install-recommends
 
-            echo "🔹 Restarting Apache and MySQL..."
-            sudo systemctl enable apache2 mysql
-            sudo systemctl restart apache2 mysql
+            echo "🔹 Restarting MySQL..."
+            sudo systemctl enable mysql
+            sudo systemctl restart mysql
+            sleep 5
+            sudo systemctl status mysql --no-pager
+
+            echo "🔹 Fixing MySQL Permissions..."
+            sudo usermod -aG mysql jenkins
+            sudo chmod 777 /var/run/mysqld/mysqld.sock
             '''
         }
     }
