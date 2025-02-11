@@ -10,10 +10,12 @@ pipeline {
                     sudo dpkg --configure -a || true  # Fix interrupted installation
                     sudo apt-get update
 
-                    echo "🔹 Installing Apache, MySQL, PHP (Non-Interactive Mode)..."
+                    echo "🔹 Installing Apache, MySQL, PHP..."
                     sudo DEBIAN_FRONTEND=noninteractive apt-get install -y apache2 mysql-server php php-mysql unzip
+
+                    echo "🔹 Starting services..."
                     sudo systemctl enable apache2 mysql
-                    sudo systemctl start apache2 mysql
+                    sudo systemctl restart apache2 mysql
                     '''
                 }
             }
@@ -73,7 +75,7 @@ pipeline {
 
     post {
         failure {
-            echo "❌ Deployment Failed!"
+            echo "❌ Deployment Failed! Check MySQL logs: sudo journalctl -u mysql --no-pager"
         }
     }
 }
