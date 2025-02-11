@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     stages {
-        stage('Fix DPKG & Install Dependencies') {
+       stage('Fix DPKG & Install MySQL') {
     steps {
         script {
             sh '''
@@ -11,19 +11,24 @@ pipeline {
             sudo apt-get update
             sudo apt-get install -f -y
 
-            echo "🔹 Preconfiguring MySQL Installation..."
+            echo "🔹 Setting Non-Interactive Mode..."
             export DEBIAN_FRONTEND=noninteractive
-            sudo apt-get install -yq mysql-server --no-install-recommends
 
-            echo "🔹 Restarting MySQL..."
+            echo "🔹 Installing MySQL Server..."
+            sudo apt-get install -yq mysql-server --no-install-recommends || (echo "❌ MySQL Installation Failed!" && exit 1)
+
+            echo "🔹 Ensuring MySQL Starts..."
             sudo systemctl enable mysql
             sudo systemctl restart mysql
             sleep 5
-            sudo systemctl status mysql --no-pager
 
-            echo "🔹 Fixing MySQL Permissions..."
-            sudo usermod -aG mysql jenkins
-            sudo chmod 777 /var/run/mysqld/mysqld.sock
+            echo "🔹 Checking MySQL Status..."
+            if ! sudo systemctl is-active --quiet mysql; then
+                echo "❌ MySQL is NOT running! Check logs: sudo journalctl -u mysql --no-pager"
+                exit 1
+            fi
+
+            echo "✅ MySQL is Running Successfully!"
             '''
         }
     }
