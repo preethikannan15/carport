@@ -21,18 +21,22 @@ pipeline {
             }
         }
 
-        stage('Verify MySQL & Fix Errors') {
+        stage('Verify MySQL & Restart if Needed') {
             steps {
                 script {
                     sh '''
                     echo "🔹 Checking MySQL Status..."
                     if ! sudo systemctl is-active --quiet mysql; then
                         echo "⚠️ MySQL is not running. Attempting to start..."
-                        sudo systemctl start mysql || (echo "❌ MySQL failed to start!" && exit 1)
+                        sudo systemctl start mysql
+                        sleep 10  # Wait for MySQL to initialize
+                        if ! sudo systemctl is-active --quiet mysql; then
+                            echo "❌ MySQL failed to start!"
+                            sudo journalctl -u mysql --no-pager | tail -n 20
+                            exit 1
+                        fi
                     fi
-                    
-                    echo "🔹 Checking MySQL Logs for Errors..."
-                    sudo tail -n 20 /var/log/mysql/error.log || true
+                    echo "✅ MySQL is running."
                     '''
                 }
             }
