@@ -2,10 +2,11 @@ pipeline {
     agent any
 
     stages {
-        stage('Install Apache, MySQL, PHP') {
+        stage('Fix dpkg & Install Dependencies') {
             steps {
                 script {
                     sh '''
+                    sudo dpkg --configure -a || true
                     sudo apt-get update -y
                     sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql unzip
                     sudo systemctl enable apache2 mysql
@@ -20,7 +21,7 @@ pipeline {
                 script {
                     sh '''
                     sudo rm -rf /var/www/html/*
-                    sudo git clone https://github.com/preethikannan15/carport.git /var/www/html/
+                    sudo git clone https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPOSITORY.git /var/www/html/
                     '''
                 }
             }
@@ -44,10 +45,8 @@ pipeline {
                 script {
                     sh '''
                     sudo systemctl restart mysql
-                    echo "Creating database..."
                     sudo mysql -u root -e "DROP DATABASE IF EXISTS carrental;"
                     sudo mysql -u root -e "CREATE DATABASE carrental;"
-                    echo "Importing database..."
                     sudo mysql -u root carrental < /var/www/html/carrental.sql
                     '''
                 }
@@ -88,3 +87,8 @@ pipeline {
         }
     }
 }
+
+
+
+
+
