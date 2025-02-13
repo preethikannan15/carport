@@ -91,7 +91,7 @@ pipeline {
         stage('Deployment Complete') {
             steps {
                 script {
-                    echo "🚀 Deployment Successful! Visit http://34.238.153.226 to access the Car Rental Portal."
+                    echo "🚀 Deployment Successful! Visit http://34.226.148.54 to access the Car Rental Portal."
                 }
             }
         }
