@@ -7,29 +7,36 @@ pipeline {
     }
 
     stages {
-        stage('Update & Install Dependencies') {
+        stage('Clean & Update System') {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Updating System & Installing Required Packages..."
+                    echo "🔹 Cleaning old locks & updating system..."
+                    sudo rm -rf /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend
+                    sudo rm -rf /var/lib/apt/lists/lock
+                    sudo rm -rf /var/cache/apt/archives/lock
                     sudo apt-get update
-                    sudo apt-get install -y unzip apache2 mysql-server php php-mysql libapache2-mod-php
                     '''
                 }
             }
         }
 
-        stage('Start & Verify MySQL') {
+        stage('Install Dependencies') {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Checking MySQL Installation..."
-                    if ! dpkg -l | grep -q mysql-server; then
-                        echo "🔹 Installing MySQL..."
-                        sudo apt-get install -y mysql-server
-                    fi
+                    echo "🔹 Installing Apache, PHP, and MySQL..."
+                    sudo apt-get install -y apache2 mysql-server php php-mysql libapache2-mod-php unzip git
+                    '''
+                }
+            }
+        }
 
-                    echo "🔹 Restarting MySQL Service..."
+        stage('Start & Fix MySQL') {
+            steps {
+                script {
+                    sh '''
+                    echo "🔹 Configuring MySQL..."
                     sudo systemctl enable mysql || true
                     sudo systemctl restart mysql || sudo systemctl start mysql
                     sleep 5
@@ -46,11 +53,11 @@ pipeline {
             }
         }
 
-        stage('Clone Repository & Extract Files') {
+        stage('Clone & Extract Files') {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Cloning Repository..."
+                    echo "🔹 Cloning repository..."
                     sudo rm -rf /var/www/html/*
                     git clone https://github.com/preethikannan15/carport.git /var/www/html/
                     cd /var/www/html/
@@ -64,7 +71,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Creating & Importing Database..."
+                    echo "🔹 Setting up database..."
                     sudo mysql -u root -e "DROP DATABASE IF EXISTS carrental;"
                     sudo mysql -u root -e "CREATE DATABASE carrental;"
                     sudo mysql -u root carrental < /var/www/html/carrental.sql
@@ -78,21 +85,13 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Restarting Apache & MySQL..."
+                    echo "🔹 Restarting services..."
                     sudo systemctl restart apache2
                     sudo systemctl restart mysql
                     sudo chown -R www-data:www-data /var/www/html/
                     sudo chmod -R 755 /var/www/html/
-                    echo "✅ Services Restarted!"
+                    echo "✅ Deployment Successful! Visit http://your-server-ip"
                     '''
-                }
-            }
-        }
-
-        stage('Deployment Complete') {
-            steps {
-                script {
-                    echo "🚀 Deployment Successful! Visit http://your-server-ip"
                 }
             }
         }
