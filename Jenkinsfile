@@ -15,23 +15,21 @@ pipeline {
             }
         }
 
-        stage('Install & Start MySQL') {
+        stage('Install Required Packages') {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Setting Non-Interactive Mode..."
-                    sudo echo 'mysql-server mysql-server/root_password password root' | sudo debconf-set-selections
-                    sudo echo 'mysql-server mysql-server/root_password_again password root' | sudo debconf-set-selections
+                    echo "🔹 Installing Required Packages..."
+                    sudo apt-get install -yq apache2 mysql-server php libapache2-mod-php php-mysql unzip git
+                    '''
+                }
+            }
+        }
 
-                    echo "🔹 Installing MySQL Server..."
-                    sudo apt-get install -yq mysql-server --no-install-recommends || (echo "❌ MySQL Installation Failed!" && exit 1)
-
-                    echo "🔹 Checking MySQL Configuration..."
-                    if [ ! -f /etc/mysql/mysql.conf.d/mysqld.cnf ]; then
-                        echo "⚠️ MySQL configuration file missing!"
-                        exit 1
-                    fi
-
+        stage('Start & Verify MySQL') {
+            steps {
+                script {
+                    sh '''
                     echo "🔹 Ensuring MySQL Starts..."
                     sudo systemctl enable mysql
                     sudo systemctl restart mysql
@@ -42,7 +40,6 @@ pipeline {
                         echo "❌ MySQL is NOT running! Check logs: sudo journalctl -u mysql --no-pager"
                         exit 1
                     fi
-
                     echo "✅ MySQL is Running Successfully!"
                     '''
                 }
@@ -54,10 +51,10 @@ pipeline {
                 script {
                     sh '''
                     echo "🔹 Cloning Repository..."
-                    sudo apt-get install -y git
-                    git clone https://github.com/https://github.com/preethikannan15/carport.git /var/www/html/car-rental
-                    cd /var/www/html/car-rental
-                    unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/
+                    sudo rm -rf /var/www/html/*
+                    git clone https://github.com/your-repo.git /var/www/html/
+                    cd /var/www/html/
+                    unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip
                     '''
                 }
             }
@@ -67,9 +64,9 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Setting Up MySQL Database..."
-                    sudo mysql -u root -proot -e "CREATE DATABASE IF NOT EXISTS carrental;"
-                    sudo mysql -u root -proot carrental < /var/www/html/car-rental/carrental.sql
+                    echo "🔹 Creating & Importing Database..."
+                    sudo mysql -u root -e "CREATE DATABASE IF NOT EXISTS carrental;"
+                    sudo mysql -u root carrental < /var/www/html/carrental.sql
                     echo "✅ Database Imported Successfully!"
                     '''
                 }
@@ -111,3 +108,4 @@ pipeline {
         }
     }
 }
+     
