@@ -2,20 +2,26 @@ pipeline {
     agent any
 
     stages {
-        stage('Install & Fix MySQL') {
+        stage('Update & Install Dependencies') {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Checking if MySQL is installed..."
-                    if ! mysql --version &> /dev/null; then
-                        echo "❌ MySQL is not installed! Installing..."
-                        sudo apt-get update
-                        sudo apt-get install -y mysql-server
-                    fi
+                    echo "🔹 Updating System & Installing Required Packages..."
+                    sudo apt-get update
+                    sudo apt-get install -y unzip apache2 mysql-server php php-mysql libapache2-mod-php
+                    '''
+                }
+            }
+        }
 
-                    echo "🔹 Restarting MySQL..."
-                    sudo systemctl enable mysql
+        stage('Start & Verify MySQL') {
+            steps {
+                script {
+                    sh '''
+                    echo "🔹 Starting MySQL Service..."
+                    sudo systemctl enable mysql || true
                     sudo systemctl restart mysql || sudo systemctl start mysql
+                    sleep 5
 
                     echo "🔹 Checking MySQL Status..."
                     if ! sudo systemctl is-active --quiet mysql; then
@@ -35,7 +41,7 @@ pipeline {
                     sh '''
                     echo "🔹 Cloning Repository..."
                     sudo rm -rf /var/www/html/*
-                    git clone https://github.com/https://github.com/preethikannan15/carport.git /var/www/html/
+                    git clone https://github.com/preethikannan15/carport.git /var/www/html/
                     cd /var/www/html/
                     unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip
                     '''
