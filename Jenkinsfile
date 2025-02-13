@@ -2,11 +2,11 @@ pipeline {
     agent any
 
     stages {
-        stage('Fix Dpkg Issues & Update System') {
+        stage('Fix Dpkg Issues & Clean System') {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Fixing dpkg issues..."
+                    echo "🔹 Fixing dpkg & apt locks..."
                     sudo rm -rf /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend
                     sudo rm -rf /var/lib/apt/lists/lock
                     sudo rm -rf /var/cache/apt/archives/lock
@@ -18,11 +18,11 @@ pipeline {
             }
         }
 
-        stage('Reinstall MySQL Server') {
+        stage('Remove Old MySQL & Install Fresh') {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Removing old MySQL versions..."
+                    echo "🔹 Removing any existing MySQL..."
                     sudo systemctl stop mysql || true
                     sudo apt-get remove --purge -y mysql-server mysql-client mysql-common
                     sudo rm -rf /var/lib/mysql /etc/mysql
@@ -40,7 +40,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Starting MySQL..."
+                    echo "🔹 Restarting MySQL..."
                     sudo systemctl enable mysql || true
                     sudo systemctl restart mysql || sudo systemctl start mysql
                     sleep 5
