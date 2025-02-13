@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     stages {
-        stage('Install Dependencies') {
+        stage('Install Apache, MySQL, PHP') {
             steps {
                 script {
                     sh '''
@@ -20,13 +20,13 @@ pipeline {
                 script {
                     sh '''
                     sudo rm -rf /var/www/html/*
-                    sudo git clone https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPOSITORY.git /var/www/html/
+                    sudo git clone your /var/www/html/
                     '''
                 }
             }
         }
 
-        stage('Extract & Setup Project') {
+        stage('Extract & Move Project') {
             steps {
                 script {
                     sh '''
@@ -44,8 +44,10 @@ pipeline {
                 script {
                     sh '''
                     sudo systemctl restart mysql
+                    echo "Creating database..."
                     sudo mysql -u root -e "DROP DATABASE IF EXISTS carrental;"
                     sudo mysql -u root -e "CREATE DATABASE carrental;"
+                    echo "Importing database..."
                     sudo mysql -u root carrental < /var/www/html/carrental.sql
                     '''
                 }
@@ -80,9 +82,9 @@ pipeline {
             echo "✅ Deployment Successful!"
         }
         failure {
-            echo "❌ Deployment Failed! Check logs."
-            sh "sudo journalctl -xeu apache2 --no-pager"
-            sh "sudo journalctl -xeu mysql --no-pager"
+            echo "❌ Deployment Failed! Checking logs..."
+            sh "sudo journalctl -xeu apache2 --no-pager || true"
+            sh "sudo journalctl -xeu mysql --no-pager || true"
         }
     }
 }
