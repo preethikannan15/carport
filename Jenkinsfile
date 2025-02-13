@@ -12,28 +12,23 @@ pipeline {
                     sudo rm -rf /var/cache/apt/archives/lock
                     sudo dpkg --configure -a || true
                     sudo apt-get update -y
+                    sudo apt-get install -f -y
                     '''
                 }
             }
         }
 
-        stage('Fix Broken Packages') {
+        stage('Reinstall MySQL Server') {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Fixing broken package installations..."
-                    sudo apt-get install -f -y || true
-                    '''
-                }
-            }
-        }
-
-        stage('Install Apache, PHP, and MySQL') {
-            steps {
-                script {
-                    sh '''
-                    echo "🔹 Installing Apache, PHP, and MySQL..."
-                    sudo apt-get install -y apache2 mysql-server php php-mysql libapache2-mod-php unzip git
+                    echo "🔹 Removing and reinstalling MySQL..."
+                    sudo systemctl stop mysql || true
+                    sudo apt-get remove --purge -y mysql-server mysql-client mysql-common
+                    sudo rm -rf /var/lib/mysql /etc/mysql
+                    sudo apt-get autoremove -y
+                    sudo apt-get autoclean -y
+                    sudo apt-get install -y mysql-server mysql-client
                     '''
                 }
             }
@@ -60,25 +55,11 @@ pipeline {
             }
         }
 
-        stage('Clone & Extract Files') {
-            steps {
-                script {
-                    sh '''
-                    echo "🔹 Cloning repository..."
-                    sudo rm -rf /var/www/html/*
-                    git clone https://github.com/preethikannan15/carport.git /var/www/html/
-                    cd /var/www/html/
-                    unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip || true
-                    '''
-                }
-            }
-        }
-
         stage('Setup MySQL Database') {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Setting up database..."
+                    echo "🔹 Creating database..."
                     sudo mysql -u root -e "DROP DATABASE IF EXISTS carrental;"
                     sudo mysql -u root -e "CREATE DATABASE carrental;"
                     sudo mysql -u root carrental < /var/www/html/carrental.sql
@@ -95,8 +76,6 @@ pipeline {
                     echo "🔹 Restarting services..."
                     sudo systemctl restart apache2
                     sudo systemctl restart mysql
-                    sudo chown -R www-data:www-data /var/www/html/
-                    sudo chmod -R 755 /var/www/html/
                     echo "✅ Deployment Successful! Visit http://your-server-ip"
                     '''
                 }
