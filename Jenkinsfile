@@ -7,11 +7,12 @@ pipeline {
                 script {
                     sh '''
                     echo "🔹 Fixing MySQL Issues..."
-                    sudo dpkg --configure -a || true
-                    sudo apt-get install -f -y
-                    sudo apt-get remove --purge -y mysql-server mysql-client mysql-common
+                    sudo rm -rf /var/lib/dpkg/lock*
+                    sudo rm -rf /var/lib/apt/lists/lock
+                    sudo rm -rf /var/cache/apt/archives/lock
                     sudo apt-get update
-                    sudo apt-get install -y mysql-server
+                    sudo apt-get install -f -y
+                    sudo dpkg --configure -a
                     '''
                 }
             }
@@ -44,7 +45,7 @@ pipeline {
                     sh '''
                     echo "🔹 Cloning Repository..."
                     sudo rm -rf /var/www/html/*
-                    git clone https://github.com/https://github.com/preethikannan15/carport.git /var/www/html/
+                    git clone https://github.com/your-repo.git /var/www/html/
                     cd /var/www/html/
                     unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip
                     '''
