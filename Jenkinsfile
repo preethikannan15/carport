@@ -26,13 +26,14 @@ pipeline {
                 script {
                     sh '''
                     echo "🔹 Installing Apache, PHP, and MySQL..."
+                    export DEBIAN_FRONTEND=noninteractive
                     sudo apt-get install -y apache2 mysql-server php php-mysql libapache2-mod-php unzip git
                     '''
                 }
             }
         }
 
-        stage('Start & Fix MySQL') {
+        stage('Start & Verify MySQL') {
             steps {
                 script {
                     sh '''
