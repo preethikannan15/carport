@@ -20,24 +20,25 @@ pipeline {
                 script {
                     sh '''
                     echo "🔹 Installing Required Packages..."
-                    sudo apt-get install -yq apache2 mysql-server php libapache2-mod-php php-mysql unzip git
+                    sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql unzip git
                     '''
                 }
             }
         }
 
-        stage('Start & Verify MySQL') {
+        stage('Fix MySQL & Restart') {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Ensuring MySQL Starts..."
+                    echo "🔹 Checking MySQL Installation..."
                     sudo systemctl enable mysql
-                    sudo systemctl restart mysql
+                    sudo systemctl restart mysql || sudo systemctl start mysql
                     sleep 5
 
                     echo "🔹 Checking MySQL Status..."
                     if ! sudo systemctl is-active --quiet mysql; then
-                        echo "❌ MySQL is NOT running! Check logs: sudo journalctl -u mysql --no-pager"
+                        echo "❌ MySQL Failed! Checking logs..."
+                        sudo journalctl -xeu mysql --no-pager || sudo cat /var/log/mysql/error.log
                         exit 1
                     fi
                     echo "✅ MySQL is Running Successfully!"
@@ -52,7 +53,7 @@ pipeline {
                     sh '''
                     echo "🔹 Cloning Repository..."
                     sudo rm -rf /var/www/html/*
-                    git clone https://github.com/https://github.com/preethikannan15/carport.git /var/www/html/
+                    git clone https://github.com/your-repo.git /var/www/html/
                     cd /var/www/html/
                     unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip
                     '''
@@ -91,7 +92,7 @@ pipeline {
         stage('Deployment Complete') {
             steps {
                 script {
-                    echo "🚀 Deployment Successful! Visit http://34.226.148.54 to access the Car Rental Portal."
+                    echo "🚀 Deployment Successful! Visit http://your-server-ip to access the Car Rental Portal."
                 }
             }
         }
@@ -102,10 +103,9 @@ pipeline {
             script {
                 sh '''
                 echo "❌ Deployment Failed! Checking Logs..."
-                sudo journalctl -u mysql --no-pager
+                sudo journalctl -xeu mysql --no-pager || sudo cat /var/log/mysql/error.log
                 '''
             }
         }
     }
 }
-     
