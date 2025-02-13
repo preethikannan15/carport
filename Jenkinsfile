@@ -15,7 +15,19 @@ pipeline {
                     sudo rm -rf /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend
                     sudo rm -rf /var/lib/apt/lists/lock
                     sudo rm -rf /var/cache/apt/archives/lock
+                    sudo dpkg --configure -a || true
                     sudo apt-get update
+                    '''
+                }
+            }
+        }
+
+        stage('Fix Broken Packages') {
+            steps {
+                script {
+                    sh '''
+                    echo "🔹 Fixing broken packages..."
+                    sudo apt-get install -f -y || true
                     '''
                 }
             }
