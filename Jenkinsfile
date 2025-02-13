@@ -20,7 +20,7 @@ pipeline {
                 script {
                     sh '''
                     sudo rm -rf /var/www/html/*
-                    sudo git clone your /var/www/html/
+                    sudo git clone https://github.com/preethikannan15/carport.git /var/www/html/
                     '''
                 }
             }
