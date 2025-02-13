@@ -11,7 +11,7 @@ pipeline {
                     sudo rm -rf /var/lib/apt/lists/lock
                     sudo rm -rf /var/cache/apt/archives/lock
                     sudo dpkg --configure -a || true
-                    sudo apt-get update
+                    sudo apt-get update -y
                     '''
                 }
             }
@@ -33,7 +33,6 @@ pipeline {
                 script {
                     sh '''
                     echo "🔹 Installing Apache, PHP, and MySQL..."
-                    export DEBIAN_FRONTEND=noninteractive
                     sudo apt-get install -y apache2 mysql-server php php-mysql libapache2-mod-php unzip git
                     '''
                 }
@@ -69,7 +68,7 @@ pipeline {
                     sudo rm -rf /var/www/html/*
                     git clone https://github.com/preethikannan15/carport.git /var/www/html/
                     cd /var/www/html/
-                    unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip
+                    unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip || true
                     '''
                 }
             }
