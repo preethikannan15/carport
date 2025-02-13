@@ -52,7 +52,7 @@ pipeline {
                     sh '''
                     echo "🔹 Cloning Repository..."
                     sudo rm -rf /var/www/html/*
-                    git clone https://github.com/your-repo.git /var/www/html/
+                    git clone https://github.com/https://github.com/preethikannan15/carport.git /var/www/html/
                     cd /var/www/html/
                     unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip
                     '''
@@ -91,7 +91,7 @@ pipeline {
         stage('Deployment Complete') {
             steps {
                 script {
-                    echo "🚀 Deployment Successful! Visit http://your-server-ip to access the Car Rental Portal."
+                    echo "🚀 Deployment Successful! Visit http://34.238.153.226 to access the Car Rental Portal."
                 }
             }
         }
