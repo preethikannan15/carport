@@ -35,7 +35,7 @@ pipeline {
                     sh '''
                     echo "🔹 Cloning Repository..."
                     sudo rm -rf /var/www/html/*
-                    git clone https://github.com/your-repo.git /var/www/html/
+                    git clone https://github.com/https://github.com/preethikannan15/carport.git /var/www/html/
                     cd /var/www/html/
                     unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip
                     '''
