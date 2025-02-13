@@ -1,17 +1,12 @@
 pipeline {
     agent any
 
-    environment {
-        DB_NAME = "carrental"
-        DB_USER = "root"
-    }
-
     stages {
-        stage('Clean & Update System') {
+        stage('Fix Dpkg Issues & Update System') {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Cleaning old locks & updating system..."
+                    echo "🔹 Fixing dpkg issues..."
                     sudo rm -rf /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend
                     sudo rm -rf /var/lib/apt/lists/lock
                     sudo rm -rf /var/cache/apt/archives/lock
@@ -26,14 +21,14 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Fixing broken packages..."
+                    echo "🔹 Fixing broken package installations..."
                     sudo apt-get install -f -y || true
                     '''
                 }
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Install Apache, PHP, and MySQL') {
             steps {
                 script {
                     sh '''
@@ -49,7 +44,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Configuring MySQL..."
+                    echo "🔹 Starting MySQL..."
                     sudo systemctl enable mysql || true
                     sudo systemctl restart mysql || sudo systemctl start mysql
                     sleep 5
