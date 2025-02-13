@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    environment {
+        DB_NAME = "carrental"
+        DB_USER = "root"
+    }
+
     stages {
         stage('Update & Install Dependencies') {
             steps {
@@ -18,7 +23,13 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Starting MySQL Service..."
+                    echo "🔹 Checking MySQL Installation..."
+                    if ! dpkg -l | grep -q mysql-server; then
+                        echo "🔹 Installing MySQL..."
+                        sudo apt-get install -y mysql-server
+                    fi
+
+                    echo "🔹 Restarting MySQL Service..."
                     sudo systemctl enable mysql || true
                     sudo systemctl restart mysql || sudo systemctl start mysql
                     sleep 5
@@ -54,7 +65,8 @@ pipeline {
                 script {
                     sh '''
                     echo "🔹 Creating & Importing Database..."
-                    sudo mysql -u root -e "CREATE DATABASE IF NOT EXISTS carrental;"
+                    sudo mysql -u root -e "DROP DATABASE IF EXISTS carrental;"
+                    sudo mysql -u root -e "CREATE DATABASE carrental;"
                     sudo mysql -u root carrental < /var/www/html/carrental.sql
                     echo "✅ Database Imported Successfully!"
                     '''
