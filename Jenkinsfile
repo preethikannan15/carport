@@ -22,13 +22,15 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Removing and reinstalling MySQL..."
+                    echo "🔹 Removing old MySQL versions..."
                     sudo systemctl stop mysql || true
                     sudo apt-get remove --purge -y mysql-server mysql-client mysql-common
                     sudo rm -rf /var/lib/mysql /etc/mysql
                     sudo apt-get autoremove -y
                     sudo apt-get autoclean -y
-                    sudo apt-get install -y mysql-server mysql-client
+
+                    echo "🔹 Installing MySQL non-interactively..."
+                    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server mysql-client
                     '''
                 }
             }
