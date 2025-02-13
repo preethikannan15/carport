@@ -21,7 +21,7 @@ pipeline {
                 script {
                     sh '''
                     sudo rm -rf /var/www/html/*
-                    sudo git clone https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPOSITORY.git /var/www/html/
+                    sudo git clone https://github.com/preethikannan15/carport.git /var/www/html/
                     '''
                 }
             }
