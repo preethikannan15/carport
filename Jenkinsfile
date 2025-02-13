@@ -2,71 +2,38 @@ pipeline {
     agent any
 
     stages {
-        stage('Fix Dpkg & APT Issues') {
+        stage('Install Dependencies') {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Fixing dpkg & APT locks..."
-                    sudo rm -rf /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend
-                    sudo rm -rf /var/lib/apt/lists/lock
-                    sudo rm -rf /var/cache/apt/archives/lock
-                    sudo dpkg --configure -a || true
                     sudo apt-get update -y
-                    sudo apt-get install -f -y
+                    sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql unzip
+                    sudo systemctl enable apache2 mysql
+                    sudo systemctl restart apache2 mysql
                     '''
                 }
             }
         }
 
-        stage('Remove & Clean MySQL') {
+        stage('Clone Repository') {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Stopping MySQL (if running)..."
-                    sudo systemctl stop mysql || true
-
-                    echo "🔹 Removing MySQL Completely..."
-                    sudo apt-get remove --purge -y mysql-server mysql-client mysql-common
-                    sudo rm -rf /var/lib/mysql /etc/mysql
-                    sudo apt-get autoremove -y
-                    sudo apt-get autoclean -y
+                    sudo rm -rf /var/www/html/*
+                    sudo git clone https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPOSITORY.git /var/www/html/
                     '''
                 }
             }
         }
 
-        stage('Fresh MySQL Install') {
+        stage('Extract & Setup Project') {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Installing MySQL non-interactively..."
-                    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server mysql-client
-
-                    echo "🔹 Securing MySQL (Setting root password)..."
-                    sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'; FLUSH PRIVILEGES;"
-
-                    echo "✅ MySQL Installed Successfully!"
-                    '''
-                }
-            }
-        }
-
-        stage('Start & Verify MySQL') {
-            steps {
-                script {
-                    sh '''
-                    echo "🔹 Restarting MySQL..."
-                    sudo systemctl enable mysql || true
-                    sudo systemctl restart mysql || sudo systemctl start mysql
-                    sleep 5
-
-                    echo "🔹 Checking MySQL Status..."
-                    if ! sudo systemctl is-active --quiet mysql; then
-                        echo "❌ MySQL Failed! Checking logs..."
-                        sudo cat /var/log/mysql/error.log || sudo journalctl -xeu mysql --no-pager
-                        exit 1
-                    fi
-                    echo "✅ MySQL is Running!"
+                    cd /var/www/html/
+                    sudo unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip
+                    sudo mv Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/* .
+                    sudo rm -rf Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0
                     '''
                 }
             }
@@ -76,24 +43,32 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Creating Database & Importing Data..."
-                    sudo mysql -u root -proot -e "DROP DATABASE IF EXISTS carrental;"
-                    sudo mysql -u root -proot -e "CREATE DATABASE carrental;"
-                    sudo mysql -u root -proot carrental < /var/www/html/carrental.sql
-                    echo "✅ Database Imported Successfully!"
+                    sudo systemctl restart mysql
+                    sudo mysql -u root -e "DROP DATABASE IF EXISTS carrental;"
+                    sudo mysql -u root -e "CREATE DATABASE carrental;"
+                    sudo mysql -u root carrental < /var/www/html/carrental.sql
                     '''
                 }
             }
         }
 
-        stage('Restart Services & Set Permissions') {
+        stage('Set Permissions & Restart Services') {
             steps {
                 script {
                     sh '''
-                    echo "🔹 Restarting Apache & MySQL..."
-                    sudo systemctl restart apache2
-                    sudo systemctl restart mysql
-                    echo "✅ Deployment Successful! Visit http://your-server-ip"
+                    sudo chown -R www-data:www-data /var/www/html/
+                    sudo chmod -R 755 /var/www/html/
+                    sudo systemctl restart apache2 mysql
+                    '''
+                }
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                script {
+                    sh '''
+                    curl -Is http://localhost | head -n 1
                     '''
                 }
             }
@@ -101,13 +76,13 @@ pipeline {
     }
 
     post {
+        success {
+            echo "✅ Deployment Successful!"
+        }
         failure {
-            script {
-                sh '''
-                echo "❌ Deployment Failed! Checking Logs..."
-                sudo journalctl -xeu mysql --no-pager || sudo cat /var/log/mysql/error.log
-                '''
-            }
+            echo "❌ Deployment Failed! Check logs."
+            sh "sudo journalctl -xeu apache2 --no-pager"
+            sh "sudo journalctl -xeu mysql --no-pager"
         }
     }
 }
