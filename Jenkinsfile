@@ -10,13 +10,10 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "Updating system and installing required packages..."
+                    echo "Updating system..."
                     sudo apt-get update -y
                     sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql unzip git
-                    
-                    echo "Enabling Apache and MySQL services..."
                     sudo systemctl enable --now apache2
-                    sudo systemctl enable --now mysql
                     '''
                 }
             }
@@ -38,7 +35,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "Extracting project files..."
+                    echo "Extracting files..."
                     sudo unzip -o /var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html
                     sudo chown -R www-data:www-data /var/www/html
                     sudo chmod -R 755 /var/www/html
@@ -55,13 +52,15 @@ pipeline {
                     sudo systemctl restart mysql
 
                     echo "Allowing MySQL some time to initialize..."
-                    sleep 10
+                    sleep 15
 
-                    echo "Setting up MySQL root password..."
+                    echo "Configuring MySQL root user..."
                     sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'; FLUSH PRIVILEGES;"
 
-                    echo "Creating and importing the database..."
+                    echo "Creating database..."
                     sudo mysql -u root -proot -e "CREATE DATABASE IF NOT EXISTS carrental;"
+
+                    echo "Importing database..."
                     sudo mysql -u root -proot carrental < /var/www/html/carrental.sql
                     '''
                 }
@@ -72,7 +71,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "Restarting Apache and MySQL services..."
+                    echo "Restarting Apache and MySQL..."
                     sudo systemctl restart apache2
                     sudo systemctl restart mysql
                     '''
@@ -95,10 +94,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Deployment successful! You can now access the portal via the server's IP."
+            echo "✅ Deployment successful! Your Car Rental Portal is ready!"
         }
         failure {
-            echo "❌ Deployment failed! Gathering logs for debugging..."
+            echo "❌ Deployment failed! Gathering logs..."
             sh 'sudo journalctl -xeu apache2 --no-pager'
             sh 'sudo journalctl -xeu mysql --no-pager'
         }
