@@ -3,19 +3,19 @@ pipeline {
 
     stages {
         stage('Install Dependencies') {
-            steps {
-                script {
-                    sh '''
-                    sudo apt-get update -y
-                    sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql unzip
-                    sudo systemctl enable apache2
-                    sudo systemctl enable mysql
-                    sudo systemctl restart apache2
-                    sudo systemctl restart mysql
-                    '''
-                }
-            }
+    steps {
+        script {
+            sh '''
+            sudo apt-get update -y
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql unzip
+            sudo systemctl enable apache2
+            sudo systemctl enable mysql
+            sudo systemctl restart apache2
+            sudo systemctl restart mysql
+            '''
         }
+    }
+}
 
         stage('Clone Repository') {
             steps {
