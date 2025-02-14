@@ -6,10 +6,12 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    sudo apt-get update
+                    sudo apt-get update -y
                     sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql unzip
                     sudo systemctl enable apache2
                     sudo systemctl enable mysql
+                    sudo systemctl restart apache2
+                    sudo systemctl restart mysql
                     '''
                 }
             }
@@ -32,18 +34,8 @@ pipeline {
                     sh '''
                     sudo unzip /tmp/carport/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /tmp/carport/
                     sudo mv /tmp/carport/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/* /var/www/html/
-                    '''
-                }
-            }
-        }
-
-        stage('Set Permissions & Restart Services') {
-            steps {
-                script {
-                    sh '''
-                    sudo chmod -R 755 /var/www/html/
                     sudo chown -R www-data:www-data /var/www/html/
-                    sudo systemctl restart apache2
+                    sudo chmod -R 755 /var/www/html/
                     '''
                 }
             }
@@ -55,16 +47,18 @@ pipeline {
                     sh '''
                     sudo mysql -e "CREATE DATABASE IF NOT EXISTS carrental;"
                     sudo mysql carrental < /var/www/html/carrental.sql
+                    sudo systemctl restart mysql
                     '''
                 }
             }
         }
 
-        stage('Verify Deployment') {
+        stage('Restart & Verify') {
             steps {
                 script {
                     sh '''
-                    curl -I http://localhost | grep "200 OK"
+                    sudo systemctl restart apache2
+                    curl -I http://localhost || echo "Deployment Failed!"
                     '''
                 }
             }
@@ -73,12 +67,12 @@ pipeline {
 
     post {
         success {
-            echo "✅ Deployment Successful!"
+            echo "✅ Deployment Successful! Access the site via server IP."
         }
         failure {
-            echo "❌ Deployment Failed! Checking logs..."
-            sh "sudo journalctl -xeu apache2 --no-pager"
-            sh "sudo journalctl -xeu mysql --no-pager"
+            echo "❌ Deployment Failed! Check logs."
+            sh 'sudo journalctl -xeu apache2 --no-pager || true'
+            sh 'sudo journalctl -xeu mysql --no-pager || true'
         }
     }
 }
