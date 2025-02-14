@@ -9,11 +9,23 @@ pipeline {
                     echo "🔧 Fixing dpkg issues..."
                     sudo dpkg --configure -a || true
                     sudo apt-get update -y
-                    sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql unzip curl git
-
-                    echo "🔄 Restarting Apache & MySQL..."
+                    sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql unzip curl git || exit 1
+                    
+                    echo "🔄 Enabling and Restarting Services..."
                     sudo systemctl enable apache2 mysql
                     sudo systemctl restart apache2 mysql
+                    '''
+                }
+            }
+        }
+
+        stage('Verify Apache & MySQL') {
+            steps {
+                script {
+                    sh '''
+                    echo "✅ Checking Apache and MySQL status..."
+                    sudo systemctl is-active --quiet apache2 || (echo "❌ Apache failed to start!" && exit 1)
+                    sudo systemctl is-active --quiet mysql || (echo "❌ MySQL failed to start!" && exit 1)
                     '''
                 }
             }
@@ -25,7 +37,7 @@ pipeline {
                     sh '''
                     echo "🌍 Cloning repository..."
                     sudo rm -rf /var/www/html/*
-                    sudo git clone https://github.com/preethikannan15/carport.git /var/www/html/
+                    sudo git clone https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPOSITORY.git /var/www/html/ || exit 1
                     '''
                 }
             }
@@ -37,7 +49,7 @@ pipeline {
                     sh '''
                     echo "📦 Extracting and moving project files..."
                     cd /var/www/html/
-                    sudo unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip
+                    sudo unzip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip || exit 1
                     sudo mv Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/* .
                     sudo rm -rf Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0
                     '''
@@ -53,9 +65,9 @@ pipeline {
                     sudo systemctl restart mysql
                     sleep 5  # Ensure MySQL is fully up
 
-                    sudo mysql -u root -e "DROP DATABASE IF EXISTS carrental;"
-                    sudo mysql -u root -e "CREATE DATABASE carrental;"
-                    sudo mysql -u root carrental < /var/www/html/carrental.sql
+                    sudo mysql -u root -e "DROP DATABASE IF EXISTS carrental;" || exit 1
+                    sudo mysql -u root -e "CREATE DATABASE carrental;" || exit 1
+                    sudo mysql -u root carrental < /var/www/html/carrental.sql || exit 1
                     '''
                 }
             }
@@ -68,7 +80,7 @@ pipeline {
                     echo "🔧 Setting permissions and restarting services..."
                     sudo chown -R www-data:www-data /var/www/html/
                     sudo chmod -R 755 /var/www/html/
-                    sudo systemctl restart apache2 mysql
+                    sudo systemctl restart apache2 mysql || exit 1
                     '''
                 }
             }
@@ -79,7 +91,7 @@ pipeline {
                 script {
                     sh '''
                     echo "✅ Verifying deployment..."
-                    curl -Is http://localhost | head -n 1
+                    curl -Is http://localhost | head -n 1 || exit 1
                     '''
                 }
             }
