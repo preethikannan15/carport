@@ -6,12 +6,14 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "🔧 Fixing dpkg issues..."
+                    echo "🔧 Fixing dpkg and package locks..."
+                    sudo rm -rf /var/lib/dpkg/lock
+                    sudo rm -rf /var/lib/dpkg/lock-frontend
                     sudo dpkg --configure -a || true
                     sudo apt-get update -y
                     sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql unzip curl git || exit 1
-                    
-                    echo "🔄 Enabling and Restarting Services..."
+
+                    echo "🔄 Restarting services..."
                     sudo systemctl enable apache2 mysql
                     sudo systemctl restart apache2 mysql
                     '''
@@ -19,13 +21,36 @@ pipeline {
             }
         }
 
-        stage('Verify Apache & MySQL') {
+        stage('Verify MySQL Setup') {
             steps {
                 script {
                     sh '''
-                    echo "✅ Checking Apache and MySQL status..."
-                    sudo systemctl is-active --quiet apache2 || (echo "❌ Apache failed to start!" && exit 1)
-                    sudo systemctl is-active --quiet mysql || (echo "❌ MySQL failed to start!" && exit 1)
+                    echo "✅ Checking MySQL status..."
+                    sudo systemctl status mysql || (echo "❌ MySQL failed to start!" && exit 1)
+
+                    echo "🔄 Checking MySQL process..."
+                    if ! pgrep mysql > /dev/null; then
+                        echo "❌ MySQL is not running! Restarting..."
+                        sudo systemctl restart mysql
+                        sleep 5
+                        sudo systemctl status mysql || exit 1
+                    fi
+                    '''
+                }
+            }
+        }
+
+        stage('Secure MySQL & Create Database') {
+            steps {
+                script {
+                    sh '''
+                    echo "🔒 Securing MySQL Installation..."
+                    sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'StrongPassword123';"
+                    sudo mysql -u root -p'StrongPassword123' -e "FLUSH PRIVILEGES;"
+
+                    echo "🗄️ Creating database..."
+                    sudo mysql -u root -p'StrongPassword123' -e "DROP DATABASE IF EXISTS carrental;"
+                    sudo mysql -u root -p'StrongPassword123' -e "CREATE DATABASE carrental;"
                     '''
                 }
             }
@@ -37,7 +62,7 @@ pipeline {
                     sh '''
                     echo "🌍 Cloning repository..."
                     sudo rm -rf /var/www/html/*
-                    sudo git clone https://github.com/preethikannan15/carport.git /var/www/html/ || exit 1
+                    sudo git clone https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPOSITORY.git /var/www/html/ || exit 1
                     '''
                 }
             }
@@ -57,17 +82,12 @@ pipeline {
             }
         }
 
-        stage('Setup MySQL Database') {
+        stage('Import Database') {
             steps {
                 script {
                     sh '''
-                    echo "🗄️ Setting up MySQL database..."
-                    sudo systemctl restart mysql
-                    sleep 5  # Ensure MySQL is fully up
-
-                    sudo mysql -u root -e "DROP DATABASE IF EXISTS carrental;" || exit 1
-                    sudo mysql -u root -e "CREATE DATABASE carrental;" || exit 1
-                    sudo mysql -u root carrental < /var/www/html/carrental.sql || exit 1
+                    echo "📥 Importing database..."
+                    sudo mysql -u root -p'StrongPassword123' carrental < /var/www/html/carrental.sql || exit 1
                     '''
                 }
             }
@@ -77,7 +97,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "🔧 Setting permissions and restarting services..."
+                    echo "🔧 Setting permissions..."
                     sudo chown -R www-data:www-data /var/www/html/
                     sudo chmod -R 755 /var/www/html/
                     sudo systemctl restart apache2 mysql || exit 1
