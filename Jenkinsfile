@@ -2,16 +2,17 @@ pipeline {
     agent any
 
     stages {
-        stage('Fix dpkg & Install Dependencies') {
+        stage('Install Dependencies') {
             steps {
                 script {
                     sh '''
-                    echo "🔧 Fixing dpkg and package locks..."
-                    sudo rm -rf /var/lib/dpkg/lock
-                    sudo rm -rf /var/lib/dpkg/lock-frontend
+                    echo "🔧 Fixing package manager issues..."
+                    sudo rm -rf /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend
                     sudo dpkg --configure -a || true
                     sudo apt-get update -y
-                    sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql unzip curl git || exit 1
+
+                    echo "📦 Installing required packages..."
+                    sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql unzip git || exit 1
 
                     echo "🔄 Restarting services..."
                     sudo systemctl enable apache2 mysql
@@ -21,14 +22,14 @@ pipeline {
             }
         }
 
-        stage('Verify MySQL Setup') {
+        stage('Verify MySQL') {
             steps {
                 script {
                     sh '''
                     echo "✅ Checking MySQL status..."
                     sudo systemctl status mysql || (echo "❌ MySQL failed to start!" && exit 1)
 
-                    echo "🔄 Checking MySQL process..."
+                    echo "🔄 Ensuring MySQL is running..."
                     if ! pgrep mysql > /dev/null; then
                         echo "❌ MySQL is not running! Restarting..."
                         sudo systemctl restart mysql
@@ -40,17 +41,13 @@ pipeline {
             }
         }
 
-        stage('Secure MySQL & Create Database') {
+        stage('Create Database') {
             steps {
                 script {
                     sh '''
-                    echo "🔒 Securing MySQL Installation..."
-                    sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'StrongPassword123';"
-                    sudo mysql -u root -p'StrongPassword123' -e "FLUSH PRIVILEGES;"
-
                     echo "🗄️ Creating database..."
-                    sudo mysql -u root -p'StrongPassword123' -e "DROP DATABASE IF EXISTS carrental;"
-                    sudo mysql -u root -p'StrongPassword123' -e "CREATE DATABASE carrental;"
+                    sudo mysql -e "DROP DATABASE IF EXISTS carrental;"
+                    sudo mysql -e "CREATE DATABASE carrental;"
                     '''
                 }
             }
@@ -62,7 +59,7 @@ pipeline {
                     sh '''
                     echo "🌍 Cloning repository..."
                     sudo rm -rf /var/www/html/*
-                    sudo git clone https://github.com/preethikannan15/carport.git /var/www/html/ || exit 1
+                    sudo git clone https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPOSITORY.git /var/www/html/ || exit 1
                     '''
                 }
             }
@@ -87,7 +84,7 @@ pipeline {
                 script {
                     sh '''
                     echo "📥 Importing database..."
-                    sudo mysql -u root -p'StrongPassword123' carrental < /var/www/html/carrental.sql || exit 1
+                    sudo mysql carrental < /var/www/html/carrental.sql || exit 1
                     '''
                 }
             }
