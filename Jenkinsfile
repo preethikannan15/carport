@@ -13,6 +13,7 @@ pipeline {
                     sudo apt-get update -y
                     sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql unzip git
                     
+                    # Enable Apache and MySQL to start on boot
                     sudo systemctl enable --now apache2
                     sudo systemctl enable --now mysql
                     '''
@@ -47,8 +48,15 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    sudo mysql -e "CREATE DATABASE IF NOT EXISTS carrental;"
-                    sudo mysql carrental < /var/www/html/carrental.sql
+                    # Ensure MySQL is running
+                    sudo systemctl restart mysql
+
+                    # Secure MySQL and set root password
+                    sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'; FLUSH PRIVILEGES;"
+
+                    # Create database and import data
+                    sudo mysql -u root -proot -e "CREATE DATABASE IF NOT EXISTS carrental;"
+                    sudo mysql -u root -proot carrental < /var/www/html/carrental.sql
                     '''
                 }
             }
