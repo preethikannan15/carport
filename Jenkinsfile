@@ -1,19 +1,18 @@
 pipeline {
     agent any
 
+    environment {
+        DEBIAN_FRONTEND = "noninteractive"
+    }
+
     stages {
         stage('Install Dependencies') {
             steps {
                 script {
                     sh '''
-                    # Prevent interactive prompts
-                    export DEBIAN_FRONTEND=noninteractive
-
-                    # Update and install required packages
                     sudo apt-get update -y
                     sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql unzip git
-
-                    # Start and enable services
+                    
                     sudo systemctl enable --now apache2
                     sudo systemctl enable --now mysql
                     '''
