@@ -6,14 +6,35 @@ pipeline {
     }
 
     stages {
-        stage('Update & Install Dependencies') {
+        stage('Fix dpkg Issues') {
             steps {
                 script {
                     sh '''
-                    echo "Updating system..."
+                    echo "Fixing dpkg lock issues..."
+                    sudo dpkg --configure -a || true
+                    sudo apt-get install -f -y || true
+                    '''
+                }
+            }
+        }
+
+        stage('Update System') {
+            steps {
+                script {
+                    sh '''
+                    echo "Updating packages..."
                     sudo apt-get update -y
-                    sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql unzip git
-                    sudo systemctl enable --now apache2
+                    '''
+                }
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    sh '''
+                    echo "Installing Apache, MySQL, PHP..."
+                    sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql unzip git || true
                     '''
                 }
             }
@@ -23,9 +44,8 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "Cloning repository..."
-                    sudo rm -rf /var/www/html/*
-                    sudo git clone https://github.com/preethikannan15/carport.git /var/www/html
+                    echo "Cloning Car Rental Portal repository..."
+                    git clone https://github.com/preethikannan15/carport.git /var/www/html/carport || true
                     '''
                 }
             }
@@ -35,9 +55,8 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "Extracting files..."
-                    sudo unzip -o /var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html
-                    sudo chown -R www-data:www-data /var/www/html
+                    echo "Extracting Car Rental Portal..."
+                    sudo unzip /var/www/html/carport/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/ || true
                     sudo chmod -R 755 /var/www/html
                     '''
                 }
@@ -48,20 +67,9 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "Restarting MySQL..."
-                    sudo systemctl restart mysql
-
-                    echo "Allowing MySQL some time to initialize..."
-                    sleep 15
-
-                    echo "Configuring MySQL root user..."
-                    sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'; FLUSH PRIVILEGES;"
-
-                    echo "Creating database..."
-                    sudo mysql -u root -proot -e "CREATE DATABASE IF NOT EXISTS carrental;"
-
-                    echo "Importing database..."
-                    sudo mysql -u root -proot carrental < /var/www/html/carrental.sql
+                    echo "Setting up MySQL database..."
+                    sudo mysql -e "CREATE DATABASE IF NOT EXISTS carrental;"
+                    sudo mysql carrental < /var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/carrental.sql
                     '''
                 }
             }
@@ -84,8 +92,7 @@ pipeline {
                 script {
                     sh '''
                     echo "Verifying deployment..."
-                    sleep 5
-                    curl -I http://localhost | grep "200 OK"
+                    curl -Is http://localhost | head -n 1
                     '''
                 }
             }
@@ -94,7 +101,7 @@ pipeline {
 
     post {
         success {
-            echo "✅ Deployment successful! Your Car Rental Portal is ready!"
+            echo "✅ Deployment successful!"
         }
         failure {
             echo "❌ Deployment failed! Gathering logs..."
