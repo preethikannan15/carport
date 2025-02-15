@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DEBIAN_FRONTEND = "noninteractive"
-        HEARTBEAT_CHECK_INTERVAL = "86400" // Fix filesystem lag issue
+        HEARTBEAT_CHECK_INTERVAL = "86400"
     }
 
     stages {
@@ -25,8 +25,8 @@ pipeline {
                 script {
                     sh '''
                     echo "🔄 Updating system packages..."
-                    sudo apt-get update -y || true
-                    sudo apt-get upgrade -y || true
+                    sudo apt-get update -y
+                    sudo apt-get upgrade -y
                     '''
                 }
             }
@@ -37,7 +37,7 @@ pipeline {
                 script {
                     sh '''
                     echo "📦 Installing Apache, MySQL, PHP..."
-                    sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql unzip git || true
+                    sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql unzip git
                     sudo systemctl enable apache2
                     sudo systemctl enable mysql
                     '''
@@ -50,8 +50,8 @@ pipeline {
                 script {
                     sh '''
                     echo "🛠 Checking if Apache and MySQL are installed correctly..."
-                    apache2 -v || echo "❌ Apache is not installed properly!"
-                    mysql --version || echo "❌ MySQL is not installed properly!"
+                    apache2 -v || { echo "❌ Apache is not installed properly!"; exit 1; }
+                    mysql --version || { echo "❌ MySQL is not installed properly!"; exit 1; }
                     '''
                 }
             }
@@ -62,11 +62,11 @@ pipeline {
                 script {
                     sh '''
                     echo "🚀 Starting Apache and MySQL..."
-                    sudo systemctl restart apache2 || echo "❌ Apache failed to start!"
-                    sudo systemctl restart mysql || echo "❌ MySQL failed to start!"
+                    sudo systemctl restart apache2 || { echo "❌ Apache failed to start!"; exit 1; }
+                    sudo systemctl restart mysql || { echo "❌ MySQL failed to start!"; exit 1; }
                     sleep 5
-                    sudo systemctl status apache2 || echo "⚠️ Apache service status check failed!"
-                    sudo systemctl status mysql || echo "⚠️ MySQL service status check failed!"
+                    sudo systemctl status apache2 || { echo "⚠️ Apache service status check failed!"; exit 1; }
+                    sudo systemctl status mysql || { echo "⚠️ MySQL service status check failed!"; exit 1; }
                     '''
                 }
             }
@@ -78,7 +78,7 @@ pipeline {
                     sh '''
                     echo "📂 Cloning Car Rental Portal repository..."
                     sudo rm -rf /var/www/html/carport
-                    git clone https://github.com/preethikannan15/carport.git /var/www/html/carport || echo "⚠️ Git clone failed!"
+                    git clone https://github.com/preethikannan15/carport.git /var/www/html/carport || { echo "⚠️ Git clone failed!"; exit 1; }
                     '''
                 }
             }
@@ -89,7 +89,7 @@ pipeline {
                 script {
                     sh '''
                     echo "🗄 Extracting Car Rental Portal..."
-                    sudo unzip /var/www/html/carport/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/ || echo "⚠️ Extraction failed!"
+                    sudo unzip /var/www/html/carport/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0.zip -d /var/www/html/ || { echo "⚠️ Extraction failed!"; exit 1; }
                     sudo chmod -R 755 /var/www/html
                     '''
                 }
@@ -101,11 +101,11 @@ pipeline {
                 script {
                     sh '''
                     echo "🛠 Setting up MySQL database..."
-                    sudo mysql -e "CREATE DATABASE IF NOT EXISTS carrental;" || echo "❌ MySQL Database creation failed!"
-                    sudo mysql -e "CREATE USER IF NOT EXISTS 'admin'@'localhost' IDENTIFIED BY 'admin123';" || echo "❌ MySQL User creation failed!"
-                    sudo mysql -e "GRANT ALL PRIVILEGES ON carrental.* TO 'admin'@'localhost';" || echo "❌ MySQL Granting privileges failed!"
-                    sudo mysql -e "FLUSH PRIVILEGES;" || echo "❌ MySQL flush privileges failed!"
-                    sudo mysql carrental < /var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/carrental.sql || echo "⚠️ MySQL Import failed!"
+                    sudo mysql -e "CREATE DATABASE IF NOT EXISTS carrental;" || { echo "❌ MySQL Database creation failed!"; exit 1; }
+                    sudo mysql -e "CREATE USER IF NOT EXISTS 'admin'@'localhost' IDENTIFIED BY 'admin123';" || { echo "❌ MySQL User creation failed!"; exit 1; }
+                    sudo mysql -e "GRANT ALL PRIVILEGES ON carrental.* TO 'admin'@'localhost';" || { echo "❌ MySQL Granting privileges failed!"; exit 1; }
+                    sudo mysql -e "FLUSH PRIVILEGES;" || { echo "❌ MySQL flush privileges failed!"; exit 1; }
+                    sudo mysql carrental < /var/www/html/Car-Rental-Portal-Using-PHP-and-MySQL-V-3.0/carrental.sql || { echo "⚠️ MySQL Import failed!"; exit 1; }
                     '''
                 }
             }
@@ -116,8 +116,8 @@ pipeline {
                 script {
                     sh '''
                     echo "🔄 Restarting Apache and MySQL..."
-                    sudo systemctl restart apache2 || echo "❌ Apache restart failed!"
-                    sudo systemctl restart mysql || echo "❌ MySQL restart failed!"
+                    sudo systemctl restart apache2 || { echo "❌ Apache restart failed!"; exit 1; }
+                    sudo systemctl restart mysql || { echo "❌ MySQL restart failed!"; exit 1; }
                     '''
                 }
             }
@@ -128,7 +128,7 @@ pipeline {
                 script {
                     sh '''
                     echo "🔍 Verifying deployment..."
-                    curl -Is http://localhost | head -n 1 || echo "❌ Deployment verification failed!"
+                    curl -Is http://localhost | head -n 1 || { echo "❌ Deployment verification failed!"; exit 1; }
                     '''
                 }
             }
