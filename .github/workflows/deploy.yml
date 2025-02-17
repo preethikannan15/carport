@@ -1,28 +1,31 @@
-version: '3.8'
+name: Deploy to Servers
 
-services:
-  app:
-    build: .
-    ports:
-      - "80:80"
-    volumes:
-      - .:/var/www/html
-    environment:
-      - MYSQL_HOST=db
-      - MYSQL_USER=root
-      - MYSQL_PASSWORD=root
-      - MYSQL_DATABASE=carrental
-    depends_on:
-      - db
+on:
+  push:
+    branches:
+      - staging
+      - deployment
 
-  db:
-    image: mysql:5.7
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: carrental
-    volumes:
-      - db_data:/var/lib/mysql
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-volumes:
-  db_data:
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Deploy to Staging
+        if: github.ref == 'refs/heads/staging'
+        run: |
+          ssh ubuntu@107.21.54.11 << EOF
+            cd carport && git pull origin staging
+            docker-compose up -d --build
+          EOF
+
+      - name: Deploy to Production
+        if: github.ref == 'refs/heads/deployment'
+        run: |
+          ssh ubuntu@18.212.215.52 << EOF
+            cd carport && git pull origin deployment
+            docker-compose up -d --build
+          EOF
