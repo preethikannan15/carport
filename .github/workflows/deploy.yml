@@ -1,22 +1,28 @@
-name: Deploy to EC2
+version: '3.8'
 
-on:
-  push:
-    branches:
-      - main
+services:
+  app:
+    build: .
+    ports:
+      - "80:80"
+    volumes:
+      - .:/var/www/html
+    environment:
+      - MYSQL_HOST=db
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=root
+      - MYSQL_DATABASE=carrental
+    depends_on:
+      - db
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: SSH into EC2 and deploy
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: 54.175.138.246
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd /var/www/html
-            git pull origin main
-            sudo chown -R www-data:www-data /var/www/html
-            sudo systemctl restart apache2
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: carrental
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
