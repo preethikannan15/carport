@@ -17,7 +17,7 @@ jobs:
       - name: Deploy to Staging
         if: github.ref == 'refs/heads/staging'
         run: |
-          ssh ubuntu@107.21.54.11 << EOF
+          ssh ubuntu@44.211.194.84 << EOF
             cd carport && git pull origin staging
             docker-compose up -d --build
           EOF
@@ -25,7 +25,7 @@ jobs:
       - name: Deploy to Production
         if: github.ref == 'refs/heads/deployment'
         run: |
-          ssh ubuntu@18.212.215.52 << EOF
+          ssh ubuntu@18.209.167.66 << EOF
             cd carport && git pull origin deployment
             docker-compose up -d --build
           EOF
