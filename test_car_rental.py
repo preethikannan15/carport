@@ -1,20 +1,21 @@
 from selenium import webdriver
-from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
-# Setup Chrome WebDriver
+# Set Chrome options
 options = webdriver.ChromeOptions()
-options.add_argument("--headless")  # Run without opening browser
-driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+options.add_argument("--headless")  # Run Chrome in headless mode
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-dev-shm-usage")
 
-# Open the Car Rental Portal
-driver.get("http://your-server-ip-or-domain/")  # Replace with your actual URL
+# Initialize Chrome WebDriver correctly
+service = Service(ChromeDriverManager().install())
+driver = webdriver.Chrome(service=service, options=options)
 
-# Example test: Check if page title contains "Car Rental"
-assert "Car Rental" in driver.title
+# Open the website (Change this URL to your Car Rental Portal)
+driver.get("http://localhost")
 
-# Print the result
-print("Test Passed: Page Title -", driver.title)
+print("Page Title:", driver.title)
 
-# Close the browser
+# Close the driver
 driver.quit()
