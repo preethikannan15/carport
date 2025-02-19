@@ -1,46 +1,42 @@
-name: Selenium Tests  
+name: Selenium Tests
 
-on:  
-  push:  
-    branches:  
-      - main  
-  pull_request:  
-    branches:  
-      - main  
+on:
+  push:
+    branches:
+      - main
 
-jobs:  
-  selenium-tests:  
-    runs-on: ubuntu-latest  
-    steps:  
-      - name: Checkout Repository  
-        uses: actions/checkout@v3  
+jobs:
+  selenium-tests:
+    runs-on: ubuntu-latest
 
-      - name: Set Up Python  
-        uses: actions/setup-python@v4  
-        with:  
-          python-version: '3.8'  
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-      - name: Install Dependencies  
-        run: |  
-          sudo apt-get update  
-          sudo apt-get install -y unzip wget curl jq  
-          sudo apt-get install -y python3-pip  
-          pip install selenium webdriver-manager  
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y php-cli php-mysql unzip wget curl jq
+          sudo apt-get install -y python3-pip
+          pip install selenium webdriver-manager
 
-      - name: Install Google Chrome  
-        run: |  
-          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -  
-          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'  
-          sudo apt update  
-          sudo apt install -y google-chrome-stable  
+      - name: Install Chrome & ChromeDriver
+        run: |
+          sudo apt update
+          sudo apt install -y google-chrome-stable
+          wget -O chromedriver.zip $(curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | jq -r '.channels.Stable.downloads.chromedriver[] | select(.platform == "linux64") | .url')
+          unzip chromedriver.zip
+          sudo mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
+          chmod +x /usr/local/bin/chromedriver
 
-      - name: Install ChromeDriver (Latest Stable Version)  
-        run: |  
-          LATEST_CHROMEDRIVER_URL=$(curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | jq -r '.channels.Stable.downloads.chromedriver[] | select(.platform == "linux64") | .url')  
-          wget -O chromedriver-linux64.zip "$LATEST_CHROMEDRIVER_URL"  
-          unzip chromedriver-linux64.zip  
-          sudo mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver  
-          chmod +x /usr/local/bin/chromedriver  
+      - name: Start PHP Server
+        run: |
+          php -S 127.0.0.1:8000 -t ${{ github.workspace }} > server.log 2>&1 &
+          sleep 15  # Give the server time to start
 
-      - name: Run Selenium Test  
-        run: python3 test_car_rental.py  
+      - name: Check If Server is Running
+        run: |
+          curl -I http://127.0.0.1:8000 || (cat server.log && exit 1)
+
+      - name: Run Selenium Test
+        run: python3 test_car_rental.py
