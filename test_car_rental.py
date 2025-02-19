@@ -13,7 +13,7 @@ service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=options)
 
 # Open the website (Change this URL to your Car Rental Portal)
-driver.get("http://localhost")
+driver.get("http://127.0.0.1:8000")
 
 print("Page Title:", driver.title)
 
