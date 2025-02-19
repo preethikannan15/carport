@@ -1,21 +1,37 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
+import time
 
-# Set Chrome options
-options = webdriver.ChromeOptions()
-options.add_argument("--headless")  # Run Chrome in headless mode
+# Set up Chrome options
+options = Options()
+options.add_argument("--headless")  # Run in headless mode
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
 
-# Initialize Chrome WebDriver correctly
+# Start ChromeDriver
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=options)
 
-# Open the website (Change this URL to your Car Rental Portal)
-driver.get("http://127.0.0.1:8000")
+# Wait for server to start
+max_retries = 5
+for i in range(max_retries):
+    try:
+        driver.get("http://127.0.0.1:8000")
+        break
+    except Exception as e:
+        print(f"Server not ready, retrying ({i+1}/{max_retries})...")
+        time.sleep(5)
+else:
+    print("Server did not start in time. Exiting...")
+    driver.quit()
+    exit(1)
 
-print("Page Title:", driver.title)
+# Validate title
+assert "Car Rental" in driver.title
 
-# Close the driver
+print("Test Passed: Car Rental Portal is accessible.")
+
+# Close browser
 driver.quit()
